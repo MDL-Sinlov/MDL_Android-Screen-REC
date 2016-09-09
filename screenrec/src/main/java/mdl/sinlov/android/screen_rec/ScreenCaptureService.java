@@ -6,9 +6,13 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
+
+import java.lang.ref.WeakReference;
 
 public class ScreenCaptureService extends Service {
 
@@ -18,6 +22,7 @@ public class ScreenCaptureService extends Service {
     private int mScreenWidth;
     private int mScreenHeight;
     private int mScreenDensity;
+    private SafeHandler handler;
 
     public ScreenCaptureService() {
     }
@@ -25,13 +30,34 @@ public class ScreenCaptureService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        handler = new SafeHandler(this);
         createImageReader();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-
         throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    private static class SafeHandler extends Handler {
+        private WeakReference<ScreenCaptureService> wk;
+
+        public SafeHandler(ScreenCaptureService screenCaptureService) {
+            this.wk = new WeakReference<ScreenCaptureService>(screenCaptureService);
+        }
+
+        public ScreenCaptureService get() {
+            return wk.get();
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            ScreenCaptureService scs = get();
+            if (null != scs) {
+
+            }
+        }
     }
 
     private void createImageReader() {
@@ -47,5 +73,14 @@ public class ScreenCaptureService extends Service {
 
     private void startCapture() {
         Image image = mImageReader.acquireLatestImage();
+        if (image == null) {
+            startScreenShot();
+        } else {
+
+        }
+    }
+
+    private void startScreenShot() {
+
     }
 }

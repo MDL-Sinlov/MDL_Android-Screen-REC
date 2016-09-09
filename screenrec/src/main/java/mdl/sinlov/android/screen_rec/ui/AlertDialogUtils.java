@@ -61,8 +61,8 @@ public class AlertDialogUtils {
     private static class SafeHandler extends Handler {
         private WeakReference<AlertDialogUtils> wk;
 
-        public SafeHandler(AlertDialogUtils AlertDialogUtils) {
-            this.wk = new WeakReference<AlertDialogUtils>(AlertDialogUtils);
+        public SafeHandler(AlertDialogUtils alertDialogUtils) {
+            this.wk = new WeakReference<AlertDialogUtils>(alertDialogUtils);
         }
 
         public AlertDialogUtils get() {

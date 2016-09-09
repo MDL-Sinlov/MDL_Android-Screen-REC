@@ -1,0 +1,14 @@
+<resources>
+    <string name="switch_setting_capture_permission">Media Projection Permission</string>
+    <string name="switch_setting_open_screen_cap_service">Open Screencap Service</string>
+    <string name="dialog_default_title">Message</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_loading">loading&#8230;</string>
+    <string name="dialog_success_title">Success</string>
+    <string name="dialog_error_title">Error</string>
+    <string name="dialog_warning_title">Warning</string>
+    <string name="dialog_retry">Retry</string>
+    <string name="msg_sdk_runtime_error">Screen REC SDK can not use</string>
+    <string name="dialog_your_cellphone_api_error">This SDK must use \nAndroid 5.0 Or Above</string>
+</resources>

@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="mdl.sinlov.android.screen_rec.app">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -15,6 +19,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="mdl.sinlov.android.screen_rec.SettingActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="behind" />
+
+        <service
+            android:name="mdl.sinlov.android.screen_rec.ScreenCaptureService"
+            android:stopWithTask="true" />
     </application>
 
 </manifest>

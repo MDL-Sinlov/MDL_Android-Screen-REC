@@ -11,4 +11,9 @@
     <string name="dialog_retry">Retry</string>
     <string name="msg_sdk_runtime_error">Screen REC SDK can not use</string>
     <string name="dialog_your_cellphone_api_error">This SDK must use \nAndroid 5.0 Or Above</string>
+    <string name="cxt_desc_preview_image">cxt:desc:preview_image</string>
+    <string name="switch_setting_open_screen_cap_service_magnification">Open Screencap magnificaiton</string>
+    <string name="hint_et_setting_magnification">Input Reduction magnification</string>
+    <string name="msg_sdk_path_error">have no screen capture</string>
+    <string name="msg_intent_choose_file_tools">Choose Filesystem tools</string>
 </resources>

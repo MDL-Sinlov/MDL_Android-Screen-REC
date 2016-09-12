@@ -7,20 +7,40 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:orientation="vertical"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:orientation="vertical">
 
         <Switch
             android:id="@+id/switch_setting_capture_permission"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
             android:text="@string/switch_setting_capture_permission" />
 
         <Switch
             android:id="@+id/switch_setting_open_screen_cap_service"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
             android:text="@string/switch_setting_open_screen_cap_service" />
+
+        <EditText
+            android:id="@+id/et_setting_magnification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:hint="@string/hint_et_setting_magnification"
+            android:inputType="number"
+            android:maxLines="1" />
+
+        <Switch
+            android:id="@+id/switch_setting_open_screen_cap_service_magnification"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:text="@string/switch_setting_open_screen_cap_service_magnification" />
 
     </LinearLayout>
 

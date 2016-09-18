@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
 
 public class ScreenRECService extends Service {
 
-    public static final long START_RECORD_TIME = 3000l;
+    public static final long START_RECORD_TIME = 4000l;
     private static final int MSG_CHECK_SAVE_CATCH = 1;
     private static final int MSG_START_RECORD = 2;
     private static final int MSG_STOP_RECORD = 3;
@@ -357,9 +357,9 @@ public class ScreenRECService extends Service {
         public boolean onSingleTapUp(MotionEvent e) {
             if (!isREC) {
                 Toast.makeText(getApplicationContext(), R.string.toast_rec_will_start, Toast.LENGTH_SHORT).show();
-                handler.sendMessageAtTime(handler.obtainMessage(MSG_START_RECORD), START_RECORD_TIME);
+                handler.sendMessageDelayed(handler.obtainMessage(MSG_START_RECORD), START_RECORD_TIME);
             } else {
-                handler.sendMessageAtTime(handler.obtainMessage(MSG_STOP_RECORD), START_RECORD_TIME);
+                handler.sendMessage(handler.obtainMessage(MSG_STOP_RECORD));
             }
             return true;
         }

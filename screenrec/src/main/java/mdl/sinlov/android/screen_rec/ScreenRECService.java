@@ -5,20 +5,28 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
-import android.media.ImageReader;
+import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.SystemClock;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,31 +34,30 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ScreenRECService extends Service {
 
-    public static final int MAX_IMAGES = 1;
-    private static final long SCREEN_CAPTURE_SLEEP_TIME = 2000l;
-    private static final int MSG_CHECK_IMAGE_CATCH = 1;
-    private static final int MSG_SINGLE_SCREEN_CAPTURE = 2;
-    public static final String SC_WIDTH = "service:ScreenRECService:SC:width";
-    public static final String SC_HEIGHT = "service:ScreenRECService:SC:height";
-    public static final String SC_DENSITY = "service:ScreenRECService:SC:Density";
-    public static final String SC_REDUCTION_MAGNIFICATION = "service:ScreenRECService:SC:Reduction_Magnification";
-    private static final int FIXED_THREAD_POOL_SIZE = 2;
-    private ExecutorService fixedThreadPool;
-    private ImageReader mImageReader;
+    public static final long START_RECORD_TIME = 3000l;
+    private static final int MSG_CHECK_SAVE_CATCH = 1;
+    private static final int MSG_START_RECORD = 2;
+    private static final int MSG_STOP_RECORD = 3;
+    private static final int VIDEO_FRAME_RATE = 30;
+    private static final int VIDEO_ENCODING_BIT_RATE = 5 * 1024 * 1024;
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mLayoutParams;
+    private GestureDetector mGestureDetector;
+    private ImageView mFloatView;
     private int mScreenWidth;
     private int mScreenHeight;
     private int mScreenDensity;
-    private int mReductionMagnification;
     private MediaProjection mMediaProjection;
-    private VirtualDisplay mVirtualDisplay;
     private MediaProjectionManager mediaProjectionManager;
+    private VirtualDisplay mVirtualDisplay;
+    private MediaRecorder mediaRecorder;
+    private String recFilePath;
     private static Intent mResultData;
     private SafeHandler handler;
+    private boolean isREC = false;
 
 
     public ScreenRECService() {
@@ -59,20 +66,23 @@ public class ScreenRECService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        fixedThreadPool = Executors.newFixedThreadPool(FIXED_THREAD_POOL_SIZE);
         handler = new SafeHandler(this);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Bundle bind = intent.getExtras();
-        mScreenWidth = bind.getInt(SC_WIDTH, 0);
-        mScreenHeight = bind.getInt(SC_HEIGHT, 0);
-        mScreenDensity = bind.getInt(SC_DENSITY, 0);
-        mReductionMagnification = bind.getInt(SC_REDUCTION_MAGNIFICATION, 1);
-        createImageReader();
-        handler.sendMessage(handler.obtainMessage(MSG_CHECK_IMAGE_CATCH));
-        startScreenCapture();
+//        Bundle bind = intent.getExtras();
+//        mScreenWidth = bind.getInt(SC_WIDTH, 0);
+//        mScreenHeight = bind.getInt(SC_HEIGHT, 0);
+//        mScreenDensity = bind.getInt(SC_DENSITY, 0);
+        mWindowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics metrics = new DisplayMetrics();
+        mWindowManager.getDefaultDisplay().getMetrics(metrics);
+        mScreenDensity = metrics.densityDpi;
+        mScreenWidth = metrics.widthPixels;
+        mScreenHeight = metrics.heightPixels;
+        createFloatView();
+        handler.sendMessage(handler.obtainMessage(MSG_CHECK_SAVE_CATCH));
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -84,9 +94,12 @@ public class ScreenRECService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopRecord();
+        if (mFloatView != null) {
+            mWindowManager.removeView(mFloatView);
+        }
         stopVirtual();
         tearDownMediaProjection();
-        stopSaveImage();
     }
 
     private static class SafeHandler extends Handler {
@@ -106,26 +119,44 @@ public class ScreenRECService extends Service {
             ScreenRECService scs = get();
             if (null != scs) {
                 switch (msg.what) {
-                    case MSG_CHECK_IMAGE_CATCH:
+                    case MSG_CHECK_SAVE_CATCH:
                         scs.checkAppCatch();
                         break;
-                    case MSG_SINGLE_SCREEN_CAPTURE:
-                        scs.startScreenShot();
+                    case MSG_START_RECORD:
+                        scs.startRecord();
+                        break;
+                    case MSG_STOP_RECORD:
+                        scs.stopRecord();
                         break;
                 }
             }
         }
     }
 
-    private void startScreenCapture() {
-        Runnable screenREC = new Runnable() {
-            @Override
-            public void run() {
-                SystemClock.sleep(SCREEN_CAPTURE_SLEEP_TIME);
-                handler.sendMessageDelayed(handler.obtainMessage(MSG_SINGLE_SCREEN_CAPTURE), 5);
-            }
-        };
-        fixedThreadPool.execute(screenREC);
+    private void startRecord() {
+        if (null == mediaRecorder) {
+            initRecorder();
+        }
+        startVirtual();
+        mediaRecorder.start();
+        isREC = true;
+        mFloatView.setBackgroundColor(Color.RED);
+    }
+
+    private void stopRecord() {
+        if (!isREC) {
+            return;
+        }
+        if (null != mediaRecorder) {
+            mediaRecorder.stop();
+            mediaRecorder.reset();
+            mVirtualDisplay.release();
+            mMediaProjection.stop();
+            mFloatView.setBackgroundColor(Color.GREEN);
+            String tInfo = getString(R.string.toast_rec_stop_file) + recFilePath;
+            Toast.makeText(getApplicationContext(), tInfo, Toast.LENGTH_LONG).show();
+            isREC = false;
+        }
     }
 
     private void checkAppCatch() {
@@ -136,32 +167,49 @@ public class ScreenRECService extends Service {
         }
     }
 
-    private void createImageReader() {
-        mImageReader = ImageReader.newInstance(mScreenWidth, mScreenHeight, PixelFormat.RGBA_8888, MAX_IMAGES);
+    private void createFloatView() {
+        mGestureDetector = new GestureDetector(getApplicationContext(), new FloatGestureTouchListener());
+        mLayoutParams = new WindowManager.LayoutParams();
+
+        mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        mLayoutParams.format = PixelFormat.RGBA_8888;
+        // set Window flag
+        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        mLayoutParams.gravity = Gravity.LEFT | Gravity.TOP;
+        mLayoutParams.x = mScreenWidth;
+        mLayoutParams.y = 100;
+        mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        mFloatView = new ImageView(getApplicationContext());
+        mFloatView.setImageBitmap(BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_menu_camera));
+        mFloatView.setBackgroundColor(Color.GREEN);
+        mWindowManager.addView(mFloatView, mLayoutParams);
+        mFloatView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return mGestureDetector.onTouchEvent(event);
+            }
+        });
     }
 
-    private void startCapture() {
-        Image image = mImageReader.acquireLatestImage();
-        if (image == null) {
-            startScreenShot();
-        } else {
-            saveImage(image);
+    private void initRecorder() {
+        mediaRecorder = new MediaRecorder();
+//        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+//        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        recFilePath = FileUtil.getRECName(getApplicationContext());
+        mediaRecorder.setOutputFile(recFilePath);
+        mediaRecorder.setVideoSize(mScreenWidth / 2, mScreenHeight / 2);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setVideoEncodingBitRate(VIDEO_ENCODING_BIT_RATE);
+        mediaRecorder.setVideoFrameRate(VIDEO_FRAME_RATE);
+        try {
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }
-
-    private void startScreenShot() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startVirtual();
-            }
-        }, 5);
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startCapture();
-            }
-        }, 30);
     }
 
     public void startVirtual() {
@@ -175,9 +223,12 @@ public class ScreenRECService extends Service {
 
     private void virtualDisplay() {
         if (null != mMediaProjection) {
-            mVirtualDisplay = mMediaProjection.createVirtualDisplay("screen-mirror",
-                    mScreenWidth, mScreenHeight, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                    mImageReader.getSurface(), null, null);
+            mVirtualDisplay = mMediaProjection.createVirtualDisplay("MainScreen",
+                    mScreenWidth / 2, mScreenHeight / 2, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    mediaRecorder.getSurface(), null, null);
+//            mVirtualDisplay = mMediaProjection.createVirtualDisplay("screen-mirror",
+//                    mScreenWidth, mScreenHeight, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+//                    mImageReader.getSurface(), null, null);
         } else {
             throw new NullPointerException("mMediaProjection is null pointer");
         }
@@ -199,7 +250,7 @@ public class ScreenRECService extends Service {
     public static void setResultData(Intent mResultData) {
         ScreenRECService.mResultData = mResultData;
     }
-    
+
     private MediaProjectionManager getMediaProjectionManager() {
         return null == mediaProjectionManager ?
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE) :
@@ -221,11 +272,6 @@ public class ScreenRECService extends Service {
         mVirtualDisplay = null;
     }
 
-    private void stopSaveImage() {
-        if (!fixedThreadPool.isShutdown()) {
-            fixedThreadPool.shutdown();
-        }
-    }
 
     private void saveImage(final Image image) {
         Runnable saveTask = new Runnable() {
@@ -266,7 +312,6 @@ public class ScreenRECService extends Service {
                 }
             }
         };
-        fixedThreadPool.execute(saveTask);
     }
 
     private Bitmap matchBitmapFromCatch(Image image) {
@@ -279,13 +324,65 @@ public class ScreenRECService extends Service {
         //总的间距
         int rowStride = planes[0].getRowStride();
         int rowPadding = rowStride - pixelStride * width;
-        int w = (width + rowPadding / pixelStride) / mReductionMagnification;
-        int h = (height) / mReductionMagnification;
+        int w = width + rowPadding / pixelStride;
+        int h = height;
         Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         bitmap.copyPixelsFromBuffer(buffer);
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, width / mReductionMagnification, height / mReductionMagnification);
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
         image.close();
         return bitmap;
     }
 
+
+    private class FloatGestureTouchListener implements GestureDetector.OnGestureListener {
+
+        int lastX, lastY;
+        int paramX, paramY;
+
+        @Override
+        public boolean onDown(MotionEvent event) {
+            lastX = (int) event.getRawX();
+            lastY = (int) event.getRawY();
+            paramX = mLayoutParams.x;
+            paramY = mLayoutParams.y;
+            return true;
+        }
+
+        @Override
+        public void onShowPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            if (!isREC) {
+                Toast.makeText(getApplicationContext(), R.string.toast_rec_will_start, Toast.LENGTH_SHORT).show();
+                handler.sendMessageAtTime(handler.obtainMessage(MSG_START_RECORD), START_RECORD_TIME);
+            } else {
+                handler.sendMessageAtTime(handler.obtainMessage(MSG_STOP_RECORD), START_RECORD_TIME);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            int dx = (int) e2.getRawX() - lastX;
+            int dy = (int) e2.getRawY() - lastY;
+            mLayoutParams.x = paramX + dx;
+            mLayoutParams.y = paramY + dy;
+            // reset
+            mWindowManager.updateViewLayout(mFloatView, mLayoutParams);
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            return false;
+        }
+    }
 }

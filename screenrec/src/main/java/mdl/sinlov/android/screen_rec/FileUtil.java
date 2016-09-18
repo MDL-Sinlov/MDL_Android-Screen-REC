@@ -65,6 +65,19 @@ public class FileUtil {
         return stringBuffer.toString();
     }
 
+    public static String getRECName(Context context){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss-SSS", Locale.CHINA);
+        String date = simpleDateFormat.format(new Date());
+        stringBuffer.setLength(0);
+        stringBuffer.append(getAppCatchPath(context));
+        stringBuffer.append(File.separator);
+        stringBuffer.append(SCREENSHOT_NAME);
+        stringBuffer.append("_");
+        stringBuffer.append(date);
+        stringBuffer.append(".mp4");
+        return stringBuffer.toString();
+    }
+
     public static String getAppCatchPath(Context context) {
         return appCatchPath == null ?
                 SD_PATH + File.separator +

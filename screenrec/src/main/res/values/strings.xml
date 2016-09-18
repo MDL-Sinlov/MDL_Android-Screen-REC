@@ -1,6 +1,11 @@
 <resources>
-    <string name="switch_setting_capture_permission">Media Projection Permission</string>
-    <string name="switch_setting_open_screen_cap_service">Open Screencap Service</string>
+
+    <string name="toast_no_floating_window_permission">The current floating window without permission, \nPlease authorization it for use this SDK!</string>
+    <string name="toast_no_floating_window_authorization_success">Floating window authorization success</string>
+    <string name="toast_no_floating_window_authorization_failure">Floating window authorization failure\nPlease try again!</string>
+    <string name="toast_rec_will_start">REC will start after 2s</string>
+    <string name="toast_rec_stop_file">REC save File is\n</string>
+
     <string name="dialog_default_title">Message</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_cancel">Cancel</string>
@@ -9,6 +14,9 @@
     <string name="dialog_error_title">Error</string>
     <string name="dialog_warning_title">Warning</string>
     <string name="dialog_retry">Retry</string>
+
+    <string name="switch_setting_capture_permission">Media Projection Permission</string>
+    <string name="switch_setting_open_screen_cap_service">Open ScreenREC Service</string>
     <string name="msg_sdk_runtime_error">Screen REC SDK can not use</string>
     <string name="dialog_your_cellphone_api_error">This SDK must use \nAndroid 5.0 Or Above</string>
     <string name="cxt_desc_preview_image">cxt:desc:preview_image</string>

@@ -29,16 +29,16 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ScreenCaptureService extends Service {
+public class ScreenRECService extends Service {
 
     public static final int MAX_IMAGES = 1;
     private static final long SCREEN_CAPTURE_SLEEP_TIME = 2000l;
     private static final int MSG_CHECK_IMAGE_CATCH = 1;
     private static final int MSG_SINGLE_SCREEN_CAPTURE = 2;
-    public static final String SC_WIDTH = "service:ScreenCaptureService:SC:width";
-    public static final String SC_HEIGHT = "service:ScreenCaptureService:SC:height";
-    public static final String SC_DENSITY = "service:ScreenCaptureService:SC:Density";
-    public static final String SC_REDUCTION_MAGNIFICATION = "service:ScreenCaptureService:SC:Reduction_Magnification";
+    public static final String SC_WIDTH = "service:ScreenRECService:SC:width";
+    public static final String SC_HEIGHT = "service:ScreenRECService:SC:height";
+    public static final String SC_DENSITY = "service:ScreenRECService:SC:Density";
+    public static final String SC_REDUCTION_MAGNIFICATION = "service:ScreenRECService:SC:Reduction_Magnification";
     private static final int FIXED_THREAD_POOL_SIZE = 2;
     private ExecutorService fixedThreadPool;
     private ImageReader mImageReader;
@@ -53,7 +53,7 @@ public class ScreenCaptureService extends Service {
     private SafeHandler handler;
 
 
-    public ScreenCaptureService() {
+    public ScreenRECService() {
     }
 
     @Override
@@ -90,20 +90,20 @@ public class ScreenCaptureService extends Service {
     }
 
     private static class SafeHandler extends Handler {
-        private WeakReference<ScreenCaptureService> wk;
+        private WeakReference<ScreenRECService> wk;
 
-        public SafeHandler(ScreenCaptureService screenCaptureService) {
-            this.wk = new WeakReference<ScreenCaptureService>(screenCaptureService);
+        public SafeHandler(ScreenRECService screenCaptureService) {
+            this.wk = new WeakReference<ScreenRECService>(screenCaptureService);
         }
 
-        public ScreenCaptureService get() {
+        public ScreenRECService get() {
             return wk.get();
         }
 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            ScreenCaptureService scs = get();
+            ScreenRECService scs = get();
             if (null != scs) {
                 switch (msg.what) {
                     case MSG_CHECK_IMAGE_CATCH:
@@ -184,19 +184,12 @@ public class ScreenCaptureService extends Service {
     }
 
     public void setUpMediaProjection() {
-//        if (mResultData == null) {
-//            Intent intent = new Intent(Intent.ACTION_MAIN);
-//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-//            startActivity(intent);
-//        } else {
         mediaProjectionManager = getMediaProjectionManager();
         if (mediaProjectionManager != null) {
             mMediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, mResultData);
         } else {
             throw new NullPointerException("mediaProjectionManager is null pointer");
         }
-//        }
     }
 
     public static Intent getResultData() {
@@ -204,19 +197,9 @@ public class ScreenCaptureService extends Service {
     }
 
     public static void setResultData(Intent mResultData) {
-        ScreenCaptureService.mResultData = mResultData;
+        ScreenRECService.mResultData = mResultData;
     }
-
-    public static Intent newIntent(Context context, Intent mResultData) {
-
-        Intent intent = new Intent(context, ScreenCaptureService.class);
-
-        if (mResultData != null) {
-            intent.putExtras(mResultData);
-        }
-        return intent;
-    }
-
+    
     private MediaProjectionManager getMediaProjectionManager() {
         return null == mediaProjectionManager ?
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE) :

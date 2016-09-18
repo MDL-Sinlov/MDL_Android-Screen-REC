@@ -22,17 +22,18 @@
         </activity>
 
         <activity
-            android:name="mdl.sinlov.android.screen_rec.SettingActivity"
+            android:name="mdl.sinlov.android.screen_rec.RECSettingActivity"
             android:launchMode="singleTask"
             android:screenOrientation="behind" />
+
+        <service
+            android:name="mdl.sinlov.android.screen_rec.ScreenRECService"
+            android:stopWithTask="true" />
 
         <activity
             android:name="mdl.sinlov.android.screen_rec.PreviewPictureActivity"
             android:launchMode="singleTask" />
 
-        <service
-            android:name="mdl.sinlov.android.screen_rec.ScreenCaptureService"
-            android:stopWithTask="true" />
     </application>
 
 </manifest>

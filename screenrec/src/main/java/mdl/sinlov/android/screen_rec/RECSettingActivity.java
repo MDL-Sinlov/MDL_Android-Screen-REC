@@ -17,7 +17,7 @@ import android.widget.Toast;
 
 import mdl.sinlov.android.screen_rec.ui.AlertDialogUtils;
 
-public class SettingActivity extends Activity {
+public class RECSettingActivity extends Activity {
 
     private Switch swCapturePermission;
     private Switch swScreenCaptureService;
@@ -109,12 +109,12 @@ public class SettingActivity extends Activity {
     }
 
     private void startScreenCaptureService(int magnification) {
-        ScreenCaptureService.setResultData(mData);
-        scService = new Intent(getApplicationContext(), ScreenCaptureService.class);
-        scService.putExtra(ScreenCaptureService.SC_WIDTH, mScreenWidth);
-        scService.putExtra(ScreenCaptureService.SC_HEIGHT, mScreenHeight);
-        scService.putExtra(ScreenCaptureService.SC_DENSITY, mScreenDensity);
-        scService.putExtra(ScreenCaptureService.SC_REDUCTION_MAGNIFICATION, magnification);
+        ScreenRECService.setResultData(mData);
+        scService = new Intent(getApplicationContext(), ScreenRECService.class);
+        scService.putExtra(ScreenRECService.SC_WIDTH, mScreenWidth);
+        scService.putExtra(ScreenRECService.SC_HEIGHT, mScreenHeight);
+        scService.putExtra(ScreenRECService.SC_DENSITY, mScreenDensity);
+        scService.putExtra(ScreenRECService.SC_REDUCTION_MAGNIFICATION, magnification);
         startService(scService);
     }
 
@@ -124,7 +124,7 @@ public class SettingActivity extends Activity {
         switch (requestCode) {
             case REQUEST_CAN_DRAW_OVER_LAYOUT:
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (Settings.canDrawOverlays(SettingActivity.this)) {
+                    if (Settings.canDrawOverlays(RECSettingActivity.this)) {
                         isCapturePermission = true;
                     } else {
                         Toast.makeText(getApplicationContext(), R.string.msg_sdk_runtime_error, Toast.LENGTH_SHORT).show();
@@ -164,7 +164,7 @@ public class SettingActivity extends Activity {
                 mediaProjectionManager.createScreenCaptureIntent(),
                 REQUEST_MEDIA_PROJECTION);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(SettingActivity.this)) {
+            if (!Settings.canDrawOverlays(RECSettingActivity.this)) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, REQUEST_CAN_DRAW_OVER_LAYOUT);

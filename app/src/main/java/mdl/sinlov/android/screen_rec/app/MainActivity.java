@@ -6,7 +6,7 @@ import android.widget.Button;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import mdl.sinlov.android.screen_rec.SettingActivity;
+import mdl.sinlov.android.screen_rec.RECSettingActivity;
 
 public class MainActivity extends MDLTestActivity {
 
@@ -27,6 +27,6 @@ public class MainActivity extends MDLTestActivity {
 
     @OnClick(R.id.btn_main_skip_screen_setting)
     public void onClick() {
-        skip2Activity(SettingActivity.class);
+        skip2Activity(RECSettingActivity.class);
     }
 }

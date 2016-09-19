@@ -25,7 +25,8 @@
 
         <activity
             android:name="mdl.sinlov.android.screen_rec.FloatRECActivity"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:theme="@style/Transparent" />
 
         <activity
             android:name="mdl.sinlov.android.screen_rec.RECSettingActivity"

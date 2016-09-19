@@ -1,6 +1,7 @@
 <resources>
 
     <string name="toast_no_floating_window_permission">The current floating window without permission, \nPlease authorization it for use this SDK!</string>
+    <string name="toast_no_floating_window_permission_must">Your API is Android 6.0 ++ \nPlease authorization Floating window for use this SDK!</string>
     <string name="toast_no_floating_window_authorization_success">Floating window authorization success</string>
     <string name="toast_no_floating_window_authorization_failure">Floating window authorization failure\nPlease try again!</string>
     <string name="toast_rec_will_start">REC will start after 2s</string>

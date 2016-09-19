@@ -1,5 +1,6 @@
 package mdl.sinlov.android.screen_rec;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
@@ -7,23 +8,23 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import mdl.sinlov.android.screen_rec.ui.AlertDialogUtils;
 
-public class FloatRECActivity extends AppCompatActivity {
+public class FloatRECActivity extends Activity {
 
     public static final int REQUEST_OVERLAY_PERMISSION = 8088;
     public static final int REQUEST_MEDIA_PROJECTION = 8089;
     private boolean isCanShowFloatWindow = false;
+    private int checkShowFloatWindow;
     private Intent skip2LauncherIntent;
     private Intent mData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_float_rec);
+        checkShowFloatWindow = 1;
         askForPermission();
     }
 
@@ -37,13 +38,31 @@ public class FloatRECActivity extends AppCompatActivity {
     public void askForPermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             AlertDialogUtils errorDialog = new AlertDialogUtils(this, AlertDialogUtils.ERROR_TYPE)
-                    .setContentText(R.string.dialog_your_cellphone_api_error);
+                    .setContentText(R.string.dialog_your_cellphone_api_error)
+                    .setCanCloseDialog(false)
+                    .setConfirmClickListener(new AlertDialogUtils.OnDialogClickListener() {
+                        @Override
+                        public void onClick(AlertDialogUtils AlertDialogUtils) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                                android.os.Process.killProcess(android.os.Process.myPid());
+                            } else {
+                                System.exit(0);
+                            }
+                        }
+                    })
+                    ;
             errorDialog.show();
+            return;
+        }
+        if (checkShowFloatWindow > 1) {
+            Toast.makeText(getApplicationContext(), R.string.toast_no_floating_window_permission, Toast.LENGTH_LONG).show();
+            checkShowFloatWindow = 1;
+            skip2Launcher();
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!Settings.canDrawOverlays(this)) {
-                Toast.makeText(getApplicationContext(), R.string.toast_no_floating_window_permission, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.toast_no_floating_window_permission_must, Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, REQUEST_OVERLAY_PERMISSION);
@@ -100,6 +119,7 @@ public class FloatRECActivity extends AppCompatActivity {
                 } else {
                     isCanShowFloatWindow = true;
                 }
+                checkShowFloatWindow++;
                 break;
             case REQUEST_MEDIA_PROJECTION:
                 if (resultCode == RESULT_OK && data != null) {
@@ -107,6 +127,7 @@ public class FloatRECActivity extends AppCompatActivity {
                     startFloatWindow();
                 } else {
                     Toast.makeText(getApplicationContext(), R.string.msg_sdk_runtime_error, Toast.LENGTH_SHORT).show();
+                    skip2Launcher();
                 }
                 break;
             default:

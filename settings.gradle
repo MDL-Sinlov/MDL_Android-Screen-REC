@@ -1,1 +1,1 @@
-include ':app', ':screenrec'
+include ':app', ':screenrec', ':screenpush'

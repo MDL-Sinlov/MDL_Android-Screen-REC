@@ -29,7 +29,7 @@ public class FileUtil {
     public static final String SD_PATH = Environment.getExternalStorageDirectory().getPath();
     public static final String SCREEN_CAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
     public static final String SCREENSHOT_NAME = "Screenshot";
-    public static final String SCREEN_RECOR_NAME = "ScreenRecord";
+    public static final String SCREEN_RECORD_NAME = "ScreenRecord";
     private static String appCatchPath;
     private static StringBuffer stringBuffer = new StringBuffer();
 
@@ -54,25 +54,25 @@ public class FileUtil {
     }
 
     public static String getScreenShotsName(Context context) {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss-SSS", Locale.CHINA);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.CHINA);
         String date = simpleDateFormat.format(new Date());
         stringBuffer.setLength(0);
         stringBuffer.append(getAppCatchPath(context));
         stringBuffer.append(File.separator);
-        stringBuffer.append(SCREEN_RECOR_NAME);
+        stringBuffer.append(SCREENSHOT_NAME);
         stringBuffer.append("_");
         stringBuffer.append(date);
         stringBuffer.append(".png");
         return stringBuffer.toString();
     }
 
-    public static String getRECName(Context context){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss-SSS", Locale.CHINA);
+    public static String getRECName(Context context) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.CHINA);
         String date = simpleDateFormat.format(new Date());
         stringBuffer.setLength(0);
         stringBuffer.append(getAppCatchPath(context));
         stringBuffer.append(File.separator);
-        stringBuffer.append(SCREENSHOT_NAME);
+        stringBuffer.append(SCREEN_RECORD_NAME);
         stringBuffer.append("_");
         stringBuffer.append(date);
         stringBuffer.append(".mp4");

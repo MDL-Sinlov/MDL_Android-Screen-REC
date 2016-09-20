@@ -37,12 +37,12 @@ import java.nio.ByteBuffer;
 
 public class ScreenRECService extends Service {
 
-    public static final long START_RECORD_TIME = 4000l;
+    public static final long START_RECORD_TIME = 2000l;
     private static final int MSG_CHECK_SAVE_CATCH = 1;
     private static final int MSG_START_RECORD = 2;
     private static final int MSG_STOP_RECORD = 3;
     private static final int VIDEO_FRAME_RATE = 30;
-    private static final int VIDEO_ENCODING_BIT_RATE = 5 * 1024 * 1024;
+    private static final int VIDEO_ENCODING_BIT_RATE = 1 * 1024 * 1024;
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mLayoutParams;
     private GestureDetector mGestureDetector;
@@ -50,6 +50,7 @@ public class ScreenRECService extends Service {
     private int mScreenWidth;
     private int mScreenHeight;
     private int mScreenDensity;
+    private double mScreenPercentage;
     private MediaProjection mMediaProjection;
     private MediaProjectionManager mediaProjectionManager;
     private VirtualDisplay mVirtualDisplay;
@@ -58,6 +59,7 @@ public class ScreenRECService extends Service {
     private static Intent mResultData;
     private SafeHandler handler;
     private boolean isREC = false;
+    private long recStartTime;
 
 
     public ScreenRECService() {
@@ -75,12 +77,13 @@ public class ScreenRECService extends Service {
 //        mScreenWidth = bind.getInt(SC_WIDTH, 0);
 //        mScreenHeight = bind.getInt(SC_HEIGHT, 0);
 //        mScreenDensity = bind.getInt(SC_DENSITY, 0);
+        mScreenPercentage = 3;
         mWindowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics metrics = new DisplayMetrics();
         mWindowManager.getDefaultDisplay().getMetrics(metrics);
         mScreenDensity = metrics.densityDpi;
-        mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
+        mScreenWidth = (int) (metrics.widthPixels / mScreenPercentage);
+        mScreenHeight = (int) (metrics.heightPixels / mScreenPercentage);
         createFloatView();
         handler.sendMessage(handler.obtainMessage(MSG_CHECK_SAVE_CATCH));
         return super.onStartCommand(intent, flags, startId);
@@ -134,9 +137,7 @@ public class ScreenRECService extends Service {
     }
 
     private void startRecord() {
-        if (null == mediaRecorder) {
-            initRecorder();
-        }
+        initRecorder();
         startVirtual();
         mediaRecorder.start();
         isREC = true;
@@ -198,13 +199,13 @@ public class ScreenRECService extends Service {
 //        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 //        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        recFilePath = FileUtil.getRECName(getApplicationContext());
-        mediaRecorder.setOutputFile(recFilePath);
-        mediaRecorder.setVideoSize(mScreenWidth / 2, mScreenHeight / 2);
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
         mediaRecorder.setVideoEncodingBitRate(VIDEO_ENCODING_BIT_RATE);
         mediaRecorder.setVideoFrameRate(VIDEO_FRAME_RATE);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setVideoSize(mScreenWidth, mScreenHeight);
+        recFilePath = FileUtil.getRECName(getApplicationContext());
+        mediaRecorder.setOutputFile(recFilePath);
         try {
             mediaRecorder.prepare();
         } catch (IOException e) {
@@ -213,18 +214,14 @@ public class ScreenRECService extends Service {
     }
 
     public void startVirtual() {
-        if (mMediaProjection != null) {
-            virtualDisplay();
-        } else {
             setUpMediaProjection();
             virtualDisplay();
-        }
     }
 
     private void virtualDisplay() {
         if (null != mMediaProjection) {
             mVirtualDisplay = mMediaProjection.createVirtualDisplay("MainScreen",
-                    mScreenWidth / 2, mScreenHeight / 2, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    mScreenWidth, mScreenHeight, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                     mediaRecorder.getSurface(), null, null);
 //            mVirtualDisplay = mMediaProjection.createVirtualDisplay("screen-mirror",
 //                    mScreenWidth, mScreenHeight, mScreenDensity, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
@@ -355,6 +352,11 @@ public class ScreenRECService extends Service {
 
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
+            if (System.currentTimeMillis() - recStartTime < START_RECORD_TIME) {
+                return true;
+            } else {
+                recStartTime = System.currentTimeMillis();
+            }
             if (!isREC) {
                 Toast.makeText(getApplicationContext(), R.string.toast_rec_will_start, Toast.LENGTH_SHORT).show();
                 handler.sendMessageDelayed(handler.obtainMessage(MSG_START_RECORD), START_RECORD_TIME);
